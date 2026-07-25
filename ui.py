@@ -281,7 +281,8 @@ def load_dataset():
             string_cols = ['state_name', 'district_name', 'police_station', 'act', 'desgname', 'disp_name', 'description', 'offense', 'punishment']
             for col in string_cols:
                 if col in df.columns:
-                    df[col] = df[col].fillna("Not Specified").astype(str)
+                    df[col] = df[col].fillna("Pending Trial").astype(str)
+                    df[col] = df[col].replace(["Not Specified", "nan", "NaN", ""], "Pending Trial")
             return df
         except Exception as e:
             st.error(f"Error reading CSV dataset: {e}")
@@ -384,19 +385,18 @@ def predict_legal_outcome(act_section, state, police_station):
 def main():
     df = load_dataset()
     
-    # Top Brand Navbar
-    st.markdown("""
-        <div class="top-brand-bar">
-            <div class="brand-title-wrap">
-                <div class="brand-logo">🏛️</div>
-                <div class="brand-text">
-                    <h1>AI-Court Intelligence</h1>
-                    <p>Indian Judiciary Cognitive Research & Predictive Legal Analytics Engine</p>
-                </div>
-            </div>
-            <div class="brand-badge">Enterprise v2.4</div>
-        </div>
-    """, unsafe_allow_html=True)
+    # Top Brand Navbar (Unindented HTML)
+    brand_html = """<div class="top-brand-bar">
+<div class="brand-title-wrap">
+<div class="brand-logo">🏛️</div>
+<div class="brand-text">
+<h1>AI-Court Intelligence</h1>
+<p>Indian Judiciary Cognitive Research & Predictive Legal Analytics Engine</p>
+</div>
+</div>
+<div class="brand-badge">Enterprise v2.4</div>
+</div>"""
+    st.markdown(brand_html, unsafe_allow_html=True)
     
     # Sidebar Search Controls
     with st.sidebar:
@@ -479,45 +479,40 @@ def main():
         if filtered_df.empty:
             st.warning("⚠️ No matching court records found. Adjust your search query in the sidebar.")
         else:
-            # Metric Summary Cards
+            # Metric Summary Cards (Unindented HTML)
+            top_disp = filtered_df['disp_name'].mode()[0] if 'disp_name' in filtered_df.columns and not filtered_df['disp_name'].empty else "Pending Trial"
+            if top_disp in ["Pending Trial", "Not Specified"]:
+                top_disp = "Pending Trial"
+
             c1, c2, c3, c4 = st.columns(4)
             with c1:
-                st.markdown(f"""
-                    <div class="metric-card-box">
-                        <div class="metric-card-title">Total Records</div>
-                        <div class="metric-card-value">{len(filtered_df):,}</div>
-                        <div class="metric-card-sub">Indexed Cases</div>
-                    </div>
-                """, unsafe_allow_html=True)
+                st.markdown(f"""<div class="metric-card-box">
+<div class="metric-card-title">Total Records</div>
+<div class="metric-card-value">{len(filtered_df):,}</div>
+<div class="metric-card-sub">Indexed Cases</div>
+</div>""", unsafe_allow_html=True)
             with c2:
-                st.markdown(f"""
-                    <div class="metric-card-box">
-                        <div class="metric-card-title">Jurisdictions</div>
-                        <div class="metric-card-value">{filtered_df['state_name'].nunique() if 'state_name' in filtered_df.columns else 1}</div>
-                        <div class="metric-card-sub">States Covered</div>
-                    </div>
-                """, unsafe_allow_html=True)
+                st.markdown(f"""<div class="metric-card-box">
+<div class="metric-card-title">Jurisdictions</div>
+<div class="metric-card-value">{filtered_df['state_name'].nunique() if 'state_name' in filtered_df.columns else 1}</div>
+<div class="metric-card-sub">States Covered</div>
+</div>""", unsafe_allow_html=True)
             with c3:
-                st.markdown(f"""
-                    <div class="metric-card-box">
-                        <div class="metric-card-title">IPC Sections</div>
-                        <div class="metric-card-value">{filtered_df['act'].nunique() if 'act' in filtered_df.columns else 1}</div>
-                        <div class="metric-card-sub">Unique Provisions</div>
-                    </div>
-                """, unsafe_allow_html=True)
+                st.markdown(f"""<div class="metric-card-box">
+<div class="metric-card-title">IPC Sections</div>
+<div class="metric-card-value">{filtered_df['act'].nunique() if 'act' in filtered_df.columns else 1}</div>
+<div class="metric-card-sub">Unique Provisions</div>
+</div>""", unsafe_allow_html=True)
             with c4:
-                top_disp = filtered_df['disp_name'].mode()[0] if 'disp_name' in filtered_df.columns and not filtered_df['disp_name'].empty else "N/A"
-                st.markdown(f"""
-                    <div class="metric-card-box">
-                        <div class="metric-card-title">Primary Disposition</div>
-                        <div class="metric-card-value" style="font-size:1.2rem; color:#34d399;">{top_disp}</div>
-                        <div class="metric-card-sub">Most Frequent Result</div>
-                    </div>
-                """, unsafe_allow_html=True)
+                st.markdown(f"""<div class="metric-card-box">
+<div class="metric-card-title">Primary Disposition</div>
+<div class="metric-card-value" style="font-size:1.2rem; color:#34d399;">{top_disp}</div>
+<div class="metric-card-sub">Most Frequent Result</div>
+</div>""", unsafe_allow_html=True)
 
             st.markdown("<br>", unsafe_allow_html=True)
 
-            # Display Case Cards
+            # Display Case Cards with Unindented HTML Strings
             limit_count = min(len(filtered_df), 15)
             for idx, row in filtered_df.head(limit_count).iterrows():
                 act_val = row.get('act', 'N/A')
@@ -528,60 +523,60 @@ def main():
                 district_val = row.get('district_name', 'N/A')
                 filing_date = row.get('date_of_filing', 'N/A')
                 decision_date = row.get('date_of_decision', 'N/A')
-                disp_val = row.get('disp_name', 'N/A')
+                disp_val = row.get('disp_name', 'Pending Trial')
+                if disp_val in ["Not Specified", "nan", "NaN", ""]:
+                    disp_val = "Pending Trial"
+
                 desc_val = row.get('description', 'Detailed explanation unavailable in standard index.')
                 offense_val = row.get('offense', 'Standard offense provision under Penal Code.')
                 punish_val = row.get('punishment', 'Statutory penalty as per Cr.P.C. schedule.')
 
                 pred_res = predict_legal_outcome(act_val, state_val, ps_val)
 
-                st.markdown(f"""
-                <div class="case-card-container">
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-                        <div>
-                            <span class="pill-badge pill-blue">CINO: {cino_val}</span>
-                            <span class="pill-badge pill-gold" style="margin-left: 0.5rem;">IPC Section {act_val}</span>
-                        </div>
-                        <span class="pill-badge {pred_res['risk_pill_class']}">{pred_res['risk_label']}</span>
-                    </div>
-                    
-                    <div class="info-grid">
-                        <div class="info-tile">
-                            <div class="info-tile-label">Court & Forum</div>
-                            <div class="info-tile-val">{court_val}</div>
-                        </div>
-                        <div class="info-tile">
-                            <div class="info-tile-label">Police Station</div>
-                            <div class="info-tile-val">{ps_val}, {district_val}</div>
-                        </div>
-                        <div class="info-tile">
-                            <div class="info-tile-label">State / Union Territory</div>
-                            <div class="info-tile-val">{state_val}</div>
-                        </div>
-                        <div class="info-tile">
-                            <div class="info-tile-label">Filing Date</div>
-                            <div class="info-tile-val">{filing_date}</div>
-                        </div>
-                        <div class="info-tile">
-                            <div class="info-tile-label">Disposition Recorded</div>
-                            <div class="info-tile-val" style="color:#34d399;">{disp_val}</div>
-                        </div>
-                    </div>
-                    
-                    <div style="background: rgba(11, 15, 25, 0.7); border-radius: 12px; padding: 1rem; border: 1px solid var(--border-color);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                            <strong style="color: #60a5fa;">🤖 AI Predictive Insights</strong>
-                            <small style="color: #94a3b8;">Confidence Score: {pred_res['confidence']}%</small>
-                        </div>
-                        <p style="font-size: 0.9rem; color: #cbd5e1; margin-bottom: 0.4rem;">
-                            <b>Expected Disposition Trend:</b> {pred_res['prediction']} ({pred_res['disposition_likely']})
-                        </p>
-                        <p style="font-size: 0.85rem; color: #94a3b8; margin: 0;">
-                            <b>Estimated Trial Frame:</b> {pred_res['est_duration']}
-                        </p>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+                card_html = f"""<div class="case-card-container">
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+<div>
+<span class="pill-badge pill-blue">CINO: {cino_val}</span>
+<span class="pill-badge pill-gold" style="margin-left: 0.5rem;">IPC Section {act_val}</span>
+</div>
+<span class="pill-badge {pred_res['risk_pill_class']}">{pred_res['risk_label']}</span>
+</div>
+<div class="info-grid">
+<div class="info-tile">
+<div class="info-tile-label">Court & Forum</div>
+<div class="info-tile-val">{court_val}</div>
+</div>
+<div class="info-tile">
+<div class="info-tile-label">Police Station</div>
+<div class="info-tile-val">{ps_val}, {district_val}</div>
+</div>
+<div class="info-tile">
+<div class="info-tile-label">State Jurisdiction</div>
+<div class="info-tile-val">{state_val}</div>
+</div>
+<div class="info-tile">
+<div class="info-tile-label">Filing Date</div>
+<div class="info-tile-val">{filing_date}</div>
+</div>
+<div class="info-tile">
+<div class="info-tile-label">Disposition Recorded</div>
+<div class="info-tile-val" style="color:#34d399;">{disp_val}</div>
+</div>
+</div>
+<div style="background: rgba(11, 15, 25, 0.7); border-radius: 12px; padding: 1rem; border: 1px solid var(--border-color);">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+<strong style="color: #60a5fa;">🤖 AI Predictive Insights</strong>
+<small style="color: #94a3b8;">Confidence Score: {pred_res['confidence']}%</small>
+</div>
+<p style="font-size: 0.9rem; color: #cbd5e1; margin-bottom: 0.4rem; margin-top: 0;">
+<b>Expected Disposition Trend:</b> {pred_res['prediction']} ({pred_res['disposition_likely']})
+</p>
+<p style="font-size: 0.85rem; color: #94a3b8; margin: 0;">
+<b>Estimated Trial Frame:</b> {pred_res['est_duration']}
+</p>
+</div>
+</div>"""
+                st.markdown(card_html, unsafe_allow_html=True)
 
                 with st.expander(f"📜 View Statutory Details for Section {act_val}"):
                     st.markdown(f"**Offense Classification:** {offense_val}")
@@ -612,29 +607,23 @@ def main():
                 
                 rc1, rc2, rc3 = st.columns(3)
                 with rc1:
-                    st.markdown(f"""
-                        <div class="metric-card-box">
-                            <div class="metric-card-title">Forecasted Outcome</div>
-                            <div class="metric-card-value" style="font-size:1.15rem; color:#60a5fa;">{res['prediction']}</div>
-                            <div class="metric-card-sub">{res['disposition_likely']}</div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                    st.markdown(f"""<div class="metric-card-box">
+<div class="metric-card-title">Forecasted Outcome</div>
+<div class="metric-card-value" style="font-size:1.15rem; color:#60a5fa;">{res['prediction']}</div>
+<div class="metric-card-sub">{res['disposition_likely']}</div>
+</div>""", unsafe_allow_html=True)
                 with rc2:
-                    st.markdown(f"""
-                        <div class="metric-card-box">
-                            <div class="metric-card-title">Bail & Custody Risk</div>
-                            <div class="metric-card-value" style="font-size:1.1rem;">{res['risk_label']}</div>
-                            <div class="metric-card-sub">Statutory Risk Rating</div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                    st.markdown(f"""<div class="metric-card-box">
+<div class="metric-card-title">Bail & Custody Risk</div>
+<div class="metric-card-value" style="font-size:1.1rem;">{res['risk_label']}</div>
+<div class="metric-card-sub">Statutory Risk Rating</div>
+</div>""", unsafe_allow_html=True)
                 with rc3:
-                    st.markdown(f"""
-                        <div class="metric-card-box">
-                            <div class="metric-card-title">Estimated Trial Time</div>
-                            <div class="metric-card-value" style="font-size:1.2rem; color:#f59e0b;">{res['est_duration']}</div>
-                            <div class="metric-card-sub">{res['confidence']}% AI Confidence</div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                    st.markdown(f"""<div class="metric-card-box">
+<div class="metric-card-title">Estimated Trial Time</div>
+<div class="metric-card-value" style="font-size:1.2rem; color:#f59e0b;">{res['est_duration']}</div>
+<div class="metric-card-sub">{res['confidence']}% AI Confidence</div>
+</div>""", unsafe_allow_html=True)
 
                 st.success(f"**Strategic Legal Summary**: Cases registered under **Section {input_act} IPC** at **{input_ps} ({input_state})** demonstrate high alignment with **{res['disposition_likely']}**.")
 
@@ -689,3 +678,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
