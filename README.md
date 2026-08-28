@@ -4,61 +4,118 @@ An AI-powered legal analytics web application designed to analyze Indian court c
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://streamlit.io)
 [![Python 3.11](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)](https://python.org)
-[![Scikit-Learn](https://img.shields.io/badge/scikit--learn-F7931E?logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
-[![Pandas](https://img.shields.io/badge/Pandas-150458?logo=pandas&logoColor=white)](https://pandas.pydata.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![HuggingFace](https://img.shields.io/badge/Transformers-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 
 ---
 
 ## 🌟 Key Features
 
+- 🧠 **InLegalBERT Outcome Predictor**: Deep neural classification (`Accepted`, `Other`, `Rejected`) based on fine-tuned InLegalBERT transformers with automatic target leakage stripping.
 - 🔍 **Interactive Legal Search Engine**: Filter judicial records by State Jurisdiction, Police Station, Act Number / IPC Section, and Case CINO ID.
 - ⚖️ **AI Outcome & Risk Predictor**: Evaluates case parameters to estimate disposition likelihood (Withdrawal / Compromise vs Full Trial), custody/bail risk levels, and predicted disposal timeframes.
 - 📊 **Judicial Data Analytics**: Visualizes historical disposition trends, top registered IPC sections, and state-wise court caseload distributions.
 - 📜 **IPC Statutory Reference Dictionary**: Instant access to IPC legal section definitions, statutory offenses, and maximum prescribed sentences.
-- ⚡ **Preset Demonstration Shortcuts**: Single-click preset buttons for rapid testing during demos and code reviews.
 
 ---
 
 ## 🛠️ Technology Stack
 
 - **Frontend / Framework**: Streamlit (with modern glassmorphic CSS styling)
-- **Data Engineering**: Pandas, NumPy
-- **Machine Learning & NLP**: Scikit-Learn, Joblib
+- **Deep Learning / NLP**: Fine-tuned InLegalBERT (`transformers`, `torch`)
+- **API Service**: FastAPI, Uvicorn, Pydantic
+- **Data Engineering**: Pandas, NumPy, Scikit-Learn
 - **Deployment Targets**: Streamlit Community Cloud, Render, HuggingFace Spaces
 
 ---
 
-## 🚀 Quick Local Setup
+## 🤖 InLegalBERT Model Integration (`best_model/`)
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/Anushka8178/AI-Court.git
-   cd AI-Court
-   ```
+The fine-tuned **InLegalBERT** model classifies legal case facts or judgment text into 3 outcomes:
+1. `Accepted`
+2. `Other`
+3. `Rejected`
 
-2. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
+### ⚙️ Environment Variables
 
-3. **Launch the application**:
-   ```bash
-   streamlit run ui.py
-   ```
+- `LEXICOURT_MODEL_DIR` or `MODEL_DIR`: Specifies the filesystem path to the unzipped HuggingFace model directory containing `config.json`, `model.safetensors`, `tokenizer.json`, and `label_mapping.json`.
+- **Default**: `./best_model`
 
-The application will open automatically in your web browser at `http://localhost:8501`.
+### 💻 Running Locally
+
+#### 1. Streamlit Web App (Direct Integration)
+```bash
+streamlit run ui.py
+```
+Open `http://localhost:8501` and navigate to **Tab 2: ⚖️ AI Outcome & Risk Intelligence**.
+
+#### 2. FastAPI Microservice
+```bash
+python lexicourt_api.py
+```
+Or with uvicorn:
+```bash
+uvicorn lexicourt_api:app --host 0.0.0.0 --port 8000
+```
+Interactive API docs will be available at `http://localhost:8000/docs`.
+
+### 📡 API Example Request & Response
+
+#### POST `/predict`
+```bash
+curl -X POST "http://localhost:8000/predict" \
+     -H "Content-Type: application/json" \
+     -d '{
+           "text": "The petitioner filed a writ petition under Article 226 challenging the detention order. The respondent state filed counter affidavit.",
+           "apply_leakage_strip": true
+         }'
+```
+
+#### Response
+```json
+{
+  "predicted_label": "Other",
+  "confidence": 0.7839,
+  "probabilities": {
+    "Accepted": 0.0963,
+    "Other": 0.7839,
+    "Rejected": 0.1197
+  },
+  "disclaimer": "AI-assisted estimate based on fine-tuned InLegalBERT (Test Macro F1 ~0.61). This output is a statistical prediction and does NOT constitute a legal guarantee or verdict."
+}
+```
+
+#### GET `/health`
+```bash
+curl "http://localhost:8000/health"
+```
+```json
+{
+  "status": "healthy",
+  "model_dir": "/absolute/path/to/AI-Court/best_model",
+  "model_loaded": true
+}
+```
 
 ---
 
-## 🌐 Deploying to Streamlit Community Cloud (Recommended - Free 1-Click)
+## ⚡ Resource & Deployment Guidelines
 
-1. Push your changes to GitHub (`git push origin main` or `master`).
-2. Visit **[share.streamlit.io](https://share.streamlit.io/)** and log in with GitHub.
-3. Click **New app** and select:
-   - **Repository**: `Anushka8178/AI-Court`
-   - **Branch**: `master` (or `main`)
-   - **Main file path**: `ui.py`
-4. Click **Deploy!** Your app will be live with an SSL HTTPS link in under 2 minutes.
+> [!IMPORTANT]
+> **RAM Requirements**: The ~110M parameter InLegalBERT transformer model requires approximately **1.5 GB to 2.0 GB of RAM** in memory during PyTorch inference. When deploying to container environments (e.g. Render, AWS ECS, HuggingFace Spaces, or Streamlit Cloud), ensure your tier provides at least **2 GB RAM**.
+
+> [!NOTE]
+> **Version Control & Model Binary Artifacts**: The `best_model/` weights directory (~438MB safetensors) is excluded in `.gitignore` to prevent committing heavy binaries to git history. When cloning into a fresh environment or CI/CD pipeline, place the `best_model/` folder in the project root or set `LEXICOURT_MODEL_DIR` to point to your storage bucket or model path.
+
+---
+
+## 🧪 Running Automated Tests
+
+Run the unit test suite to verify model loading, input validation, leakage stripping, and response formatting:
+```bash
+python test_lexicourt_inference.py
+```
 
 ---
 
@@ -66,16 +123,18 @@ The application will open automatically in your web browser at `http://localhost
 
 ```text
 ├── ui.py                                                # Main Streamlit application
+├── lexicourt_inference.py                               # Standalone InLegalBERT inference module
+├── lexicourt_api.py                                     # FastAPI microservice for /predict & /health
+├── test_lexicourt_inference.py                         # Automated test suite for outcome prediction
+├── best_model/                                          # Fine-tuned InLegalBERT model directory
+│   ├── config.json                                      # HF Model configuration & label mapping
+│   ├── model.safetensors                                # PyTorch model weights (~438 MB)
+│   ├── tokenizer.json & tokenizer_config.json           # Fast Tokenizer files
+│   └── label_mapping.json                               # Label index mapping (0: Accepted, 1: Other, 2: Rejected)
 ├── requirements.txt                                     # Python dependencies
 ├── Procfile                                             # Web server entrypoint for Render / Railway
-├── .streamlit/
-│   └── config.toml                                      # Theme & server configuration
-├── final_cases_with_detailed_section_explanations.csv   # Indian judicial dataset
-├── model.pkl                                            # ML model artifact
-├── preprocessor.pkl                                     # Feature preprocessor
-├── label_encoder.pkl                                    # Class encoder
-├── .gitignore                                           # Excludes 2.5GB binary files & caches
-└── README.md                                            # Documentation
+├── .gitignore                                           # Git exclusion rules (includes best_model/ & binaries)
+└── README.md                                            # Technical documentation
 ```
 
 ---

@@ -1,6 +1,10 @@
-# Large dataset files (>100MB)
+# Large dataset files (>100MB) & Model Weights
 *.dta
 acts_sections.dta
+best_model/
+*.safetensors
+*.bin
+*.pt
 
 # Python environment & cache
 __pycache__/
